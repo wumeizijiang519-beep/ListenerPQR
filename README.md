@@ -109,7 +109,7 @@ powershell -ExecutionPolicy Bypass -File build-windows.ps1
 ```
 
 `--demo` 使用临时示例课堂，不录音、不调用 API、不混入真实记录。
-`--smoke-test` 检查 GUI 启动并写入 `smoke-ok.txt`。打包脚本运行测试后启动生成的 `.exe`，验证离线界面可用。
+`--smoke-test` 检查录音/本地识别原生依赖和 GUI 启动，再写入 `smoke-ok.txt`。打包脚本运行测试后启动生成的 `.exe`，验证离线组件与界面可用，不需麦克风、模型下载或 API Key。
 
 测试覆盖分段与尾段、静音、队列上限、缓存容量/时限/保护、重启恢复、文字保存顺序、失败重试、API 格式与错误脱敏、整堂资料归纳和界面笔记隔离。
 

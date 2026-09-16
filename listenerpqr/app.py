@@ -19,6 +19,17 @@ def main():
     parser.add_argument("--smoke-test", action="store_true", help="离线界面启动检查，成功写入 smoke-ok.txt")
     parser.add_argument("--screenshot", help="保存演示界面截图并退出")
     args = parser.parse_args()
+    if args.smoke_test:
+        # Verify native libraries in the packaged executable without requiring a
+        # physical microphone, network access, an API key, or a downloaded model.
+        import importlib.util
+        import sounddevice
+        sounddevice.get_portaudio_version()
+        if importlib.util.find_spec("faster_whisper"):
+            from faster_whisper import WhisperModel  # noqa: F401
+        if sys.platform == "win32":
+            from keyring.backends.Windows import WinVaultKeyring
+            WinVaultKeyring()
     app = QApplication(sys.argv)
     app.setApplicationName("ListenerPQR")
     app.setOrganizationName("ListenerPQR")
