@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "listenerpqr"
+version = "0.1.0"
+description = "Windows classroom companion with bounded audio caching and AI notes"
+requires-python = ">=3.11,<3.14"
+dependencies = [
+  "PySide6>=6.8,<7", "sounddevice>=0.5,<0.6", "numpy>=1.26,<3",
+  "httpx>=0.28,<0.29", "keyring>=25,<26", "platformdirs>=4,<5",
+]
+
+[project.optional-dependencies]
+local = ["faster-whisper>=1.1,<2"]
+dev = ["pytest>=8,<10", "pyinstaller>=6.11,<7"]
+
+[project.gui-scripts]
+listenerpqr = "listenerpqr.app:main"
+
+[tool.setuptools.packages.find]
+include = ["listenerpqr*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
