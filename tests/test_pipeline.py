@@ -239,3 +239,63 @@ def test_overview_includes_every_segment():
     assert result == "compressed"
     for i in range(30):
         assert f"SEGMENT-{i}:" in "".join(calls)
+
+
+def test_recording_and_worker_threads_process_final_partial(state, monkeypatch):
+    import sys
+    import types
+    store, sid, cache = state
+    delivered = threading.Event()
+    events = []
+
+    class FakeStream:
+        active = True
+
+        def __init__(self, **kwargs):
+            self.callback = kwargs["callback"]
+
+        def __enter__(self):
+            def send_audio():
+                for _ in range(25):
+                    self.callback(np.full(1600, 2000, dtype=np.int16).tobytes(), 1600, None, None)
+                    time.sleep(0.005)
+                delivered.set()
+            self.thread = threading.Thread(target=send_audio)
+            self.thread.start()
+            return self
+
+        def stop(self):
+            self.thread.join()
+            self.active = False
+
+        def __exit__(self, *args):
+            self.stop()
+
+    monkeypatch.setitem(sys.modules, "sounddevice", types.SimpleNamespace(
+        check_input_settings=lambda **kwargs: None, RawInputStream=FakeStream, PortAudioError=RuntimeError))
+
+    class Client:
+        def __init__(self): self.cancel = threading.Event()
+        def transcribe(self, path): return "课堂内容"
+        def summarize(self, *args): return "课堂总结"
+
+    emit = lambda *event: events.append(event)
+    worker = Engine(store, cache, Client(), emit)
+    recorder = Recorder(store, cache, sid, None, 1, -50, time.monotonic(), emit)
+    worker.start(); recorder.start()
+    try:
+        assert delivered.wait(3)
+        recorder.stop(); recorder.thread.join(timeout=3)
+        deadline = time.monotonic() + 4
+        while time.monotonic() < deadline:
+            chunks = store.chunks(sid)
+            if len(chunks) == 3 and all(c["status"] == "done" for c in chunks):
+                break
+            time.sleep(0.02)
+        assert len(chunks) == 3 and all(c["status"] == "done" for c in chunks)
+        assert chunks[-1]["end"] - chunks[-1]["start"] == pytest.approx(0.5)
+        assert cache.size() == 0
+        assert not any(e[0] == "record_error" for e in events)
+    finally:
+        recorder.stop(); recorder.thread.join(timeout=3)
+        worker.stop_event.set(); worker.thread.join(timeout=3)

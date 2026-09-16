@@ -94,12 +94,14 @@ class SafeBrowser(QTextBrowser):
         while block.isValid():
             cursor = QTextCursor(block)
             fmt = block.blockFormat()
-            fmt.setLineHeight(145, QTextBlockFormat.LineHeightTypes.ProportionalHeight.value)
-            fmt.setBottomMargin(6)
+            fmt.setLineHeight(125, QTextBlockFormat.LineHeightTypes.ProportionalHeight.value)
+            fmt.setBottomMargin(3)
             if fmt.headingLevel():
-                fmt.setTopMargin(12)
+                fmt.setTopMargin(8)
             cursor.setBlockFormat(fmt)
             block = block.next()
+        self.setTextCursor(QTextCursor(self.document()))
+        self.verticalScrollBar().setValue(0)
 
 
 class SettingsDialog(QDialog):
